@@ -1,20 +1,25 @@
-import Link from "next/link";
-import { PLACEHOLDER_STATS } from "@/lib/placeholder";
+import Link from 'next/link';
+import { query } from '@/lib/apollo-client';
+import { NOTE_STATS } from '@/lib/graphql';
 
-// TODO (Part 3 Step 8): wire this page to the noteStats custom query.
-//   import { query } from "@/lib/apollo-client";
-//   import { NOTE_STATS } from "@/lib/graphql";
-//   const { data } = await query({ query: NOTE_STATS });
+type Stats = {
+  total: number;
+  pinned: number;
+  archived: number;
+  byTag: Array<{ slug: string; name: string; count: number }>;
+};
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function StatsPage() {
-  const stats = PLACEHOLDER_STATS;
+  const { data } = await query<{ noteStats: Stats }>({ query: NOTE_STATS });
+  const stats = data?.noteStats;
+  if (!stats) return null;
 
   const counts = [
-    { label: "Total", value: stats.total },
-    { label: "Pinned", value: stats.pinned },
-    { label: "Archived", value: stats.archived },
+    { label: 'Total', value: stats.total },
+    { label: 'Pinned', value: stats.pinned },
+    { label: 'Archived', value: stats.archived },
   ];
 
   return (
@@ -22,18 +27,18 @@ export default async function StatsPage() {
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Stats</h1>
         <p className="text-sm text-neutral-500">
-          Aggregated via the{" "}
+          Aggregated via the{' '}
           <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-xs">
             noteStats
-          </code>{" "}
-          custom query, which returns the{" "}
+          </code>{' '}
+          custom query, returning the{' '}
           <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-xs">
             NoteStats
-          </code>{" "}
-          object type with a per-tag{" "}
+          </code>{' '}
+          object type with a per-tag{' '}
           <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-xs">
             TagCount
-          </code>{" "}
+          </code>{' '}
           breakdown.
         </p>
       </header>

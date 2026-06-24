@@ -1,17 +1,24 @@
-import Link from "next/link";
-import { updateNoteAction } from "./actions";
-import {
-  PLACEHOLDER_NOTE_DETAIL,
-  PLACEHOLDER_TAGS,
-} from "@/lib/placeholder";
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { query } from '@/lib/apollo-client';
+import { NOTE_DETAIL, TAGS } from '@/lib/graphql';
+import { updateNoteAction } from './actions';
 
-// TODO (Part 3 Step 5): fetch the note + tags via GraphQL in parallel.
-//   const [noteRes, tagsRes] = await Promise.all([
-//     query({ query: NOTE_DETAIL, variables: { documentId } }),
-//     query({ query: TAGS }),
-//   ]);
+type Tag = {
+  documentId: string;
+  name: string;
+  slug: string;
+  color?: string | null;
+};
 
-export const dynamic = "force-dynamic";
+type NoteDetail = {
+  documentId: string;
+  title: string;
+  content: string | null;
+  tags: Tag[];
+};
+
+export const dynamic = 'force-dynamic';
 
 export default async function EditNotePage({
   params,
@@ -20,8 +27,18 @@ export default async function EditNotePage({
 }) {
   const { documentId } = await params;
 
-  const note = PLACEHOLDER_NOTE_DETAIL;
-  const allTags = PLACEHOLDER_TAGS;
+  const [noteRes, tagsRes] = await Promise.all([
+    query<{ note: NoteDetail | null }>({
+      query: NOTE_DETAIL,
+      variables: { documentId },
+    }),
+    query<{ tags: Tag[] }>({ query: TAGS }),
+  ]);
+
+  const note = noteRes.data?.note;
+  if (!note) notFound();
+
+  const allTags = tagsRes.data?.tags ?? [];
   const selectedTagIds = new Set(note.tags.map((t) => t.documentId));
   const boundAction = updateNoteAction.bind(null, documentId);
 
@@ -36,11 +53,11 @@ export default async function EditNotePage({
         </Link>
         <h1 className="text-2xl font-semibold">Edit note</h1>
         <p className="text-sm text-neutral-500">
-          Rendering placeholder data. Wire up{" "}
+          Submits the{' '}
           <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-xs">
             updateNote
-          </code>{" "}
-          in Step 5.
+          </code>{' '}
+          Shadow CRUD mutation.
         </p>
       </header>
 
@@ -67,7 +84,7 @@ export default async function EditNotePage({
             id="content"
             name="content"
             rows={12}
-            defaultValue={note.content ?? ""}
+            defaultValue={note.content ?? ''}
             className="w-full rounded border px-3 py-2 font-mono text-sm"
           />
         </div>

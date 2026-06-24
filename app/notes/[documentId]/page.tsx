@@ -1,27 +1,45 @@
-import Link from "next/link";
-import { Markdown } from "@/components/markdown";
-import { TagBadge } from "@/components/tag-badge";
-import { NoteActions } from "@/components/note-actions";
-import { PLACEHOLDER_NOTE_DETAIL } from "@/lib/placeholder";
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { query } from '@/lib/apollo-client';
+import { NOTE_DETAIL } from '@/lib/graphql';
+import { Markdown } from '@/components/markdown';
+import { TagBadge } from '@/components/tag-badge';
+import { NoteActions } from '@/components/note-actions';
 
-// TODO (Part 3 Step 4): fetch the real note by documentId.
-//   import { notFound } from "next/navigation";
-//   import { query } from "@/lib/apollo-client";
-//   import { NOTE_DETAIL } from "@/lib/graphql";
-//   const { data } = await query({ query: NOTE_DETAIL, variables: { documentId } });
-//   if (!data?.note) notFound();
+type NoteDetail = {
+  documentId: string;
+  title: string;
+  pinned: boolean;
+  archived: boolean;
+  wordCount: number;
+  readingTime: number;
+  updatedAt: string;
+  content: string | null;
+  tags: Array<{
+    documentId: string;
+    name: string;
+    slug: string;
+    color?: string | null;
+  }>;
+};
 
-export const dynamic = "force-dynamic";
-
-export default async function NoteDetailPage({
-  params,
-}: {
+type NoteDetailPageProps = {
   params: Promise<{ documentId: string }>;
-}) {
-  // documentId is captured for use once the GraphQL query is wired in.
-  await params;
+};
 
-  const note = PLACEHOLDER_NOTE_DETAIL;
+export const dynamic = 'force-dynamic';
+
+export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
+  const { documentId } = await params;
+
+  const { data } = await query<{ note: NoteDetail }>({
+    query: NOTE_DETAIL,
+    variables: { documentId },
+  });
+
+  const note = data?.note;
+
+  if (!note) notFound();
 
   return (
     <article className="space-y-6">
@@ -36,7 +54,7 @@ export default async function NoteDetailPage({
             {note.title}
           </h1>
           <p className="text-sm text-neutral-500">
-            {note.wordCount} words · ~{note.readingTime} min read · updated{" "}
+            {note.wordCount} words · ~{note.readingTime} min read · updated{' '}
             {new Date(note.updatedAt).toLocaleDateString()}
           </p>
           {note.tags.length > 0 && (

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 // Custom 404 for the note detail route. Catches `notFound()` calls from
 // `app/notes/[documentId]/page.tsx`. Generic copy here so it works whether
@@ -8,9 +8,9 @@ import Link from "next/link";
 export default function NotFound() {
   return (
     <div className="mx-auto max-w-xl space-y-4 py-12 text-center">
-      <h1 className="text-2xl font-semibold">Note not found</h1>
+      <h1 className="text-2xl font-semibold">Page Not Found</h1>
       <p className="text-sm text-neutral-600">
-        This note doesn&rsquo;t exist or isn&rsquo;t available to you.
+        This page doesn&rsquo;t exist or isn&rsquo;t available to you.
       </p>
       <Link
         href="/"

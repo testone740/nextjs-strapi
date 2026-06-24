@@ -1,14 +1,20 @@
-import Link from "next/link";
-import { createNoteAction } from "./actions";
-import { PLACEHOLDER_TAGS } from "@/lib/placeholder";
+import Link from 'next/link';
+import { query } from '@/lib/apollo-client';
+import { TAGS } from '@/lib/graphql';
+import { createNoteAction } from './actions';
 
-// TODO (Part 3 Step 5): fetch real tags via the TAGS query.
-//   const { data } = await query({ query: TAGS });
+type Tag = {
+  documentId: string;
+  name: string;
+  slug: string;
+  color?: string | null;
+};
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function NewNotePage() {
-  const tags = PLACEHOLDER_TAGS;
+  const { data } = await query<{ tags: Tag[] }>({ query: TAGS });
+  const tags = data?.tags ?? [];
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -18,10 +24,10 @@ export default async function NewNotePage() {
         </Link>
         <h1 className="text-2xl font-semibold">New note</h1>
         <p className="text-sm text-neutral-500">
-          Submits the{" "}
+          Submits the{' '}
           <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-xs">
             createNote
-          </code>{" "}
+          </code>{' '}
           Shadow CRUD mutation. Content is Markdown.
         </p>
       </header>
@@ -83,10 +89,7 @@ export default async function NewNotePage() {
           >
             Create note
           </button>
-          <Link
-            href="/"
-            className="text-sm text-neutral-500 hover:text-black"
-          >
+          <Link href="/" className="text-sm text-neutral-500 hover:text-black">
             Cancel
           </Link>
         </div>

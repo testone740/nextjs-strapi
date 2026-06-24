@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import { Nav } from "@/components/nav";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Nav } from '@/components/nav';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Strapi v5 GraphQL demo",
+  title: 'Strapi v5 GraphQL demo',
   description:
-    "Companion frontend for the Strapi v5 GraphQL customization tutorial (Part 2).",
+    'Companion frontend for the Strapi v5 GraphQL customization tutorial (Part 2).',
 };
 
 export default function RootLayout({

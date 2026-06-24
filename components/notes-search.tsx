@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 const DEBOUNCE_MS = 300;
 
@@ -15,11 +15,11 @@ export function NotesSearch({ initialQuery }: { initialQuery: string }) {
 
   useEffect(() => setValue(initialQuery), [initialQuery]);
 
-  function pushQuery(next: string) {
+  function pushQuery(searchTerm: string) {
     const params = new URLSearchParams(searchParams.toString());
-    const trimmed = next.trim();
-    if (trimmed) params.set("q", trimmed);
-    else params.delete("q");
+    const trimmed = searchTerm.trim();
+    if (trimmed) params.set('q', trimmed);
+    else params.delete('q');
     const qs = params.toString();
     startTransition(() =>
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }),
@@ -27,10 +27,10 @@ export function NotesSearch({ initialQuery }: { initialQuery: string }) {
   }
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const next = e.target.value;
-    setValue(next);
+    const searchTerm = e.target.value;
+    setValue(searchTerm);
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => pushQuery(next), DEBOUNCE_MS);
+    timerRef.current = setTimeout(() => pushQuery(searchTerm), DEBOUNCE_MS);
   }
 
   return (

@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { TagBadge } from "@/components/tag-badge";
+import Link from 'next/link';
+import { TagBadge } from '@/components/tag-badge';
 
 type Note = {
   documentId: string;

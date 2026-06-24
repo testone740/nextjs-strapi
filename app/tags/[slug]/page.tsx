@@ -1,13 +1,12 @@
-import Link from "next/link";
-import { NoteCard } from "@/components/note-card";
-import { PLACEHOLDER_NOTES } from "@/lib/placeholder";
+// app/tags/[slug]/page.tsx
+import Link from 'next/link';
+import { query } from '@/lib/apollo-client';
+import { NOTES_BY_TAG } from '@/lib/graphql';
+import { NoteCard } from '@/components/note-card';
 
-// TODO (Part 3 Step 7): wire this page to the notesByTag custom query.
-//   import { query } from "@/lib/apollo-client";
-//   import { NOTES_BY_TAG } from "@/lib/graphql";
-//   const { data } = await query({ query: NOTES_BY_TAG, variables: { slug } });
+type Note = Parameters<typeof NoteCard>[0]['note'];
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function TagPage({
   params,
@@ -16,10 +15,11 @@ export default async function TagPage({
 }) {
   const { slug } = await params;
 
-  // Pretend the current tag matches by filtering the placeholder set.
-  const notes = PLACEHOLDER_NOTES.filter((n) =>
-    n.tags.some((t) => t.slug === slug),
-  );
+  const { data } = await query<{ notesByTag: Note[] }>({
+    query: NOTES_BY_TAG,
+    variables: { slug },
+  });
+  const notes = data?.notesByTag ?? [];
 
   return (
     <div className="space-y-6">
@@ -28,24 +28,23 @@ export default async function TagPage({
           ← Back to notes
         </Link>
         <h1 className="text-2xl font-semibold">
-          Notes tagged{" "}
+          Notes tagged{' '}
           <code className="rounded bg-neutral-100 px-2 py-0.5 font-mono text-lg">
             {slug}
           </code>
         </h1>
         <p className="text-sm text-neutral-500">
-          Not wired yet. Step 7 connects this page to the{" "}
+          Calls the{' '}
           <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-xs">
             notesByTag
-          </code>{" "}
-          custom query (nested relation filter).
+          </code>{' '}
+          custom query, which runs a nested relation filter on Tag.
         </p>
       </header>
 
       {notes.length === 0 ? (
         <p className="text-sm text-neutral-500">
-          No placeholder notes match the tag{" "}
-          <code className="font-mono">{slug}</code>.
+          No active notes tagged <code className="font-mono">{slug}</code>.
         </p>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

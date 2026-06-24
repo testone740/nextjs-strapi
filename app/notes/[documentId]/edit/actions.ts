@@ -1,11 +1,29 @@
-"use server";
+'use server';
 
-// TODO (Part 3 Step 5): wire this to the updateNote Shadow CRUD mutation.
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { getClient } from '@/lib/apollo-client';
+import { UPDATE_NOTE } from '@/lib/graphql';
 
-export async function updateNoteAction(
-  documentId: string,
-  formData: FormData,
-) {
-  const payload = Object.fromEntries(formData);
-  console.log(`[starter] updateNoteAction(${documentId}):`, payload);
+const asString = (v: FormDataEntryValue | null) =>
+  typeof v === 'string' ? v : '';
+
+export async function updateNoteAction(documentId: string, formData: FormData) {
+  const title = asString(formData.get('title')).trim();
+  const content = asString(formData.get('content'));
+  const tagIds = formData.getAll('tagIds').filter((v) => typeof v === 'string');
+
+  if (!title) return;
+
+  await getClient().mutate({
+    mutation: UPDATE_NOTE,
+    variables: {
+      documentId,
+      data: { title, content, tags: tagIds },
+    },
+  });
+
+  revalidatePath('/');
+  revalidatePath(`/notes/${documentId}`);
+  redirect(`/notes/${documentId}`);
 }
