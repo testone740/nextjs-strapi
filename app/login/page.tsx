@@ -1,11 +1,11 @@
-import { loginAction } from "./actions";
+import { loginAction } from './actions';
 
 // Part 4 Step 8.4 fills this page in. The form posts to `loginAction`,
 // which currently console.logs. The structural pieces (form fields, error
 // banner placeholder, link to /register) are here so Part 4 only wires up
 // the action.
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function LoginPage({
   searchParams,
@@ -16,7 +16,7 @@ export default async function LoginPage({
   return (
     <div className="mx-auto max-w-sm space-y-6">
       <h1 className="text-2xl font-semibold">Sign in</h1>
-      {error === "invalid" && (
+      {error === 'invalid' && (
         <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           Invalid username or password.
         </p>
@@ -45,7 +45,7 @@ export default async function LoginPage({
         </button>
       </form>
       <p className="text-sm text-neutral-500">
-        No account?{" "}
+        No account?{' '}
         <a href="/register" className="underline">
           Register here
         </a>

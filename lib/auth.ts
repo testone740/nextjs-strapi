@@ -1,18 +1,24 @@
-// Auth helpers — STUB.
-//
-// Part 4 of the tutorial will flesh this file out to read the JWT cookie set
-// by the login Server Action, returning it to both `lib/apollo-client.ts`
-// (for the Authorization header) and to `components/auth-nav.tsx` (for the
-// current-user check).
-//
-// Until Part 4 ships, `getJwt()` always returns `null`. Any consumer that
-// uses it should handle that case gracefully (i.e. "anonymous request").
+import { cookies } from 'next/headers';
 
-// Part 4 will replace this with `import { cookies } from "next/headers"`
-// and read the httpOnly `strapi_jwt` cookie.
+export const JWT_COOKIE = 'strapi_jwt';
 
-export const JWT_COOKIE_NAME = "strapi_jwt";
+export async function getJwt(): Promise<string | undefined> {
+  const store = await cookies();
+  return store.get(JWT_COOKIE)?.value;
+}
 
-export async function getJwt(): Promise<string | null> {
-  return null;
+export async function setJwt(jwt: string): Promise<void> {
+  const store = await cookies();
+  store.set(JWT_COOKIE, jwt, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+  });
+}
+
+export async function clearJwt(): Promise<void> {
+  const store = await cookies();
+  store.delete(JWT_COOKIE);
 }

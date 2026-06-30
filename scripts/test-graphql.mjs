@@ -12,7 +12,11 @@
 // is the backend repo; this copy lives here so readers of Part 3 can run the
 // test without context-switching.
 
-const ENDPOINT = process.env.STRAPI_GRAPHQL_URL ?? "http://localhost:1337/graphql";
+const ENDPOINT =
+  process.env.STRAPI_GRAPHQL_URL ?? 'http://localhost:1337/graphql';
+
+const USER1_JWT =
+  'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgyODMwMzUwLCJleHAiOjE3ODU0MjIzNTB9.6NINuZIzcj7Hkz6KOUhX55Gne8gk0u_oEVr0zkddJRU';
 
 let pass = 0;
 let fail = 0;
@@ -20,14 +24,14 @@ const failed = [];
 
 const gql = async (query, variables, headers = {}) => {
   const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({ query, variables }),
   });
   return res.json();
 };
 
-const check = (label, condition, detail = "") => {
+const check = (label, condition, detail = '') => {
   if (condition) {
     console.log(`  ✓ ${label}`);
     pass++;
@@ -44,30 +48,32 @@ const section = (name) => console.log(`\n${name}`);
 async function main() {
   // Server reachability
   try {
-    const ping = await gql("{ __typename }");
-    if (!ping?.data) throw new Error("No data");
+    const ping = await gql('{ __typename }');
+    if (!ping?.data) throw new Error('No data');
   } catch (e) {
     console.error(`Cannot reach ${ENDPOINT}. Is npm run develop running?`);
     process.exit(2);
   }
 
   // 1. Shadow CRUD queries on Note and Tag
-  section("Shadow CRUD queries");
+  section('Shadow CRUD queries');
   const active = await gql(
     `{ notes(sort: ["pinned:desc","updatedAt:desc"]) {
         documentId title pinned tags { name slug color }
       } }`,
   );
   const activeNotes = active?.data?.notes ?? [];
-  check("List active notes returns an array", Array.isArray(activeNotes));
+  check('List active notes returns an array', Array.isArray(activeNotes));
   check(
-    "Active notes hydrate the tags relation",
+    'Active notes hydrate the tags relation',
     activeNotes.some((n) => Array.isArray(n.tags)),
   );
 
   const firstNote = activeNotes[0];
   if (!firstNote) {
-    console.error("\nNo active notes in the database. Seed at least one via the admin UI and re-run.");
+    console.error(
+      '\nNo active notes in the database. Seed at least one via the admin UI and re-run.',
+    );
     process.exit(2);
   }
 
@@ -80,13 +86,13 @@ async function main() {
     { documentId: firstNote.documentId },
   );
   check(
-    "Fetch by documentId works",
+    'Fetch by documentId works',
     single?.data?.note?.documentId === firstNote.documentId,
   );
   check(
-    "note.content returns a string or null (richtext → String)",
+    'note.content returns a string or null (richtext → String)',
     single?.data?.note?.content === null ||
-      typeof single?.data?.note?.content === "string",
+      typeof single?.data?.note?.content === 'string',
   );
 
   // Array-form sort, matching the corrected Sandbox example in Part 2.
@@ -94,10 +100,10 @@ async function main() {
     `{ tags(sort: ["name:asc"]) { documentId name slug } }`,
   );
   const tagsList = tagsResult?.data?.tags ?? [];
-  check("List tags returns an array", Array.isArray(tagsList));
+  check('List tags returns an array', Array.isArray(tagsList));
 
   // Shadow CRUD mutations: createNote + updateNote
-  section("Shadow CRUD mutations");
+  section('Shadow CRUD mutations');
   const createdTitle = `Test note ${Date.now()}`;
   const created = await gql(
     `mutation CreateNote($data: NoteInput!) {
@@ -106,7 +112,7 @@ async function main() {
     {
       data: {
         title: createdTitle,
-        content: "Created by the validation script.",
+        content: 'Created by the validation script.',
         pinned: false,
         archived: false,
         tags: [],
@@ -115,7 +121,7 @@ async function main() {
   );
   const createdId = created?.data?.createNote?.documentId;
   check(
-    "createNote returns a new Note with the submitted title",
+    'createNote returns a new Note with the submitted title',
     created?.data?.createNote?.title === createdTitle,
   );
 
@@ -127,7 +133,7 @@ async function main() {
       { documentId: createdId, data: { title: `${createdTitle} (updated)` } },
     );
     check(
-      "updateNote changes the title of an existing Note",
+      'updateNote changes the title of an existing Note',
       updated?.data?.updateNote?.title === `${createdTitle} (updated)`,
     );
 
@@ -149,7 +155,7 @@ async function main() {
         (t) => t.documentId,
       );
       check(
-        "updateNote replaces the tags relation when a new array is passed",
+        'updateNote replaces the tags relation when a new array is passed',
         newTagIds.length === 1 && newTagIds[0] === tagsList[0].documentId,
       );
     }
@@ -162,8 +168,8 @@ async function main() {
     );
     const ex = excerptCheck?.data?.note?.excerpt;
     check(
-      "excerpt(length: 10) respects the argument",
-      typeof ex === "string" && ex.length <= 13,
+      'excerpt(length: 10) respects the argument',
+      typeof ex === 'string' && ex.length <= 13,
     );
 
     // Archive on the primary test note (not just the duplicate from later).
@@ -172,16 +178,16 @@ async function main() {
       { id: createdId },
     );
     check(
-      "archiveNote sets archived=true on a fresh note",
+      'archiveNote sets archived=true on a fresh note',
       archivedDirect?.data?.archiveNote?.archived === true,
     );
   }
 
   // 2. Hidden-field confirmations (private: true)
-  section("Hidden fields (private: true)");
+  section('Hidden fields (private: true)');
   const hiddenOutput = await gql(`{ notes { internalNotes } }`);
   check(
-    "internalNotes is not selectable on Note",
+    'internalNotes is not selectable on Note',
     hiddenOutput?.errors?.some((e) =>
       e.message.includes('Cannot query field "internalNotes"'),
     ),
@@ -191,9 +197,11 @@ async function main() {
     `{ notes(filters: { internalNotes: { containsi: "probe" } }) { documentId } }`,
   );
   check(
-    "internalNotes is absent from NoteFiltersInput",
+    'internalNotes is absent from NoteFiltersInput',
     hiddenFilter?.errors?.some((e) =>
-      e.message.includes('"internalNotes" is not defined by type "NoteFiltersInput"'),
+      e.message.includes(
+        '"internalNotes" is not defined by type "NoteFiltersInput"',
+      ),
     ),
   );
 
@@ -201,34 +209,34 @@ async function main() {
     `mutation N { createNote(data: { title: "x", internalNotes: "probe" }) { documentId } }`,
   );
   check(
-    "internalNotes is absent from NoteInput",
+    'internalNotes is absent from NoteInput',
     hiddenInput?.errors?.some((e) =>
       e.message.includes('"internalNotes" is not defined by type "NoteInput"'),
     ),
   );
 
   // 3. Computed fields
-  section("Computed fields");
+  section('Computed fields');
   const computed = await gql(
     `{ notes(pagination: { pageSize: 3 }) { title wordCount readingTime excerpt(length: 60) } }`,
   );
   const cNotes = computed?.data?.notes ?? [];
   check(
-    "wordCount is a number on every note",
-    cNotes.every((n) => typeof n.wordCount === "number"),
+    'wordCount is a number on every note',
+    cNotes.every((n) => typeof n.wordCount === 'number'),
   );
   check(
-    "readingTime is a number on every note",
-    cNotes.every((n) => typeof n.readingTime === "number"),
+    'readingTime is a number on every note',
+    cNotes.every((n) => typeof n.readingTime === 'number'),
   );
   check(
-    "excerpt is a string on every note",
-    cNotes.every((n) => typeof n.excerpt === "string"),
+    'excerpt is a string on every note',
+    cNotes.every((n) => typeof n.excerpt === 'string'),
   );
 
   // 4. Custom queries
-  section("Custom queries");
-  const searchTerm = (firstNote.title ?? "").split(/\s+/)[0] || "a";
+  section('Custom queries');
+  const searchTerm = (firstNote.title ?? '').split(/\s+/)[0] || 'a';
   const search = await gql(
     `query S($q: String!) { searchNotes(query: $q) { documentId title } }`,
     { q: searchTerm },
@@ -243,12 +251,12 @@ async function main() {
   );
   const s = stats?.data?.noteStats;
   check(
-    "noteStats returns total/pinned/archived as numbers",
-    typeof s?.total === "number" &&
-      typeof s?.pinned === "number" &&
-      typeof s?.archived === "number",
+    'noteStats returns total/pinned/archived as numbers',
+    typeof s?.total === 'number' &&
+      typeof s?.pinned === 'number' &&
+      typeof s?.archived === 'number',
   );
-  check("noteStats.byTag is an array", Array.isArray(s?.byTag));
+  check('noteStats.byTag is an array', Array.isArray(s?.byTag));
 
   if (tagsList[0]) {
     const byTag = await gql(
@@ -269,7 +277,7 @@ async function main() {
       {
         data: {
           title: archivedProbeTitle,
-          content: "archived probe",
+          content: 'archived probe',
           pinned: false,
           archived: true,
           tags: [tagsList[0].documentId],
@@ -284,21 +292,21 @@ async function main() {
     );
     const ids = (byTagAfter?.data?.notesByTag ?? []).map((n) => n.documentId);
     check(
-      "notesByTag excludes archived notes",
+      'notesByTag excludes archived notes',
       !!probeId && !ids.includes(probeId),
     );
     // Leave the probe archived; the next run will re-create (different title).
   }
 
   // 5. Custom mutations (toggles and duplicates; restores state on success)
-  section("Custom mutations");
+  section('Custom mutations');
   const pinBefore = firstNote.pinned;
   const toggle = await gql(
     `mutation T($id: ID!) { togglePin(documentId: $id) { pinned } }`,
     { id: firstNote.documentId },
   );
   check(
-    "togglePin flips the pinned flag",
+    'togglePin flips the pinned flag',
     toggle?.data?.togglePin?.pinned === !pinBefore,
   );
   // Restore original state.
@@ -313,7 +321,7 @@ async function main() {
   const dupTitle = dup?.data?.duplicateNote?.title;
   check(
     "duplicateNote returns a new note titled '<original> (copy)'",
-    typeof dupTitle === "string" && dupTitle.endsWith("(copy)"),
+    typeof dupTitle === 'string' && dupTitle.endsWith('(copy)'),
   );
 
   if (dup?.data?.duplicateNote?.documentId) {
@@ -322,20 +330,20 @@ async function main() {
       { id: dup.data.duplicateNote.documentId },
     );
     check(
-      "archiveNote sets archived=true and pinned=false on the duplicate",
+      'archiveNote sets archived=true and pinned=false on the duplicate',
       archived?.data?.archiveNote?.archived === true &&
         archived?.data?.archiveNote?.pinned === false,
     );
   }
 
   // 6. Middleware: soft-delete invariant on Query.notes
-  section("Middleware: soft-delete invariant on Query.notes");
+  section('Middleware: soft-delete invariant on Query.notes');
 
   // (a) Bare query: succeeds, archived rows are absent
   const bare = await gql(`{ notes { documentId archived } }`);
   const bareNotes = bare?.data?.notes ?? [];
   check(
-    "Bare notes query succeeds and returns no archived rows",
+    'Bare notes query succeeds and returns no archived rows',
     !bare?.errors && bareNotes.every((n) => n.archived === false),
   );
 
@@ -344,13 +352,13 @@ async function main() {
     `{ notes(filters: { archived: { eq: true } }) { documentId } }`,
   );
   check(
-    "Caller-supplied `archived: { eq: true }` is rejected",
+    'Caller-supplied `archived: { eq: true }` is rejected',
     sneaky?.errors?.some((e) => /archived/i.test(e.message)) &&
       !sneaky?.data?.notes,
   );
   check(
-    "Rejection middleware surfaces extensions.code: FORBIDDEN",
-    sneaky?.errors?.some((e) => e.extensions?.code === "FORBIDDEN"),
+    'Rejection middleware surfaces extensions.code: FORBIDDEN',
+    sneaky?.errors?.some((e) => e.extensions?.code === 'FORBIDDEN'),
   );
 
   // (c) Polite query (archived: false): also rejected. The server alone
@@ -359,32 +367,29 @@ async function main() {
     `{ notes(filters: { archived: { eq: false } }) { documentId } }`,
   );
   check(
-    "Caller-supplied `archived: { eq: false }` is also rejected",
+    'Caller-supplied `archived: { eq: false }` is also rejected',
     polite?.errors?.some((e) => /archived/i.test(e.message)) &&
       !polite?.data?.notes,
   );
 
   // 7. Policy: cap-page-size on Query.notes
-  section("Policy: cap-page-size");
+  section('Policy: cap-page-size');
 
   const overCap = await gql(
     `{ notes(pagination: { pageSize: 500 }) { documentId } }`,
   );
   check(
-    "Pagination over the cap is rejected (Policy Failed)",
-    overCap?.errors?.some((e) => e.message.includes("Policy Failed")),
+    'Pagination over the cap is rejected (Policy Failed)',
+    overCap?.errors?.some((e) => e.message.includes('Policy Failed')),
   );
 
   const underCap = await gql(
     `{ notes(pagination: { pageSize: 10 }) { documentId } }`,
   );
-  check(
-    "Pagination at/under the cap is allowed",
-    !underCap?.errors,
-  );
+  check('Pagination at/under the cap is allowed', !underCap?.errors);
 
   // 8. Middleware: soft-delete on Query.note (single fetch by documentId)
-  section("Middleware: soft-delete on Query.note");
+  section('Middleware: soft-delete on Query.note');
 
   const probeCreate = await gql(
     `mutation N { createNote(data: { title: "soft-delete probe ${Date.now()}", content: "probe" }) { documentId } }`,
@@ -401,14 +406,14 @@ async function main() {
       { id: probeId },
     );
     check(
-      "Direct fetch of an archived note returns NotFound",
+      'Direct fetch of an archived note returns NotFound',
       archivedFetch?.errors?.some((e) => /not found/i.test(e.message)) &&
         !archivedFetch?.data?.note,
     );
     check(
-      "Single-fetch coverage surfaces extensions.code: STRAPI_NOT_FOUND_ERROR",
+      'Single-fetch coverage surfaces extensions.code: STRAPI_NOT_FOUND_ERROR',
       archivedFetch?.errors?.some(
-        (e) => e.extensions?.code === "STRAPI_NOT_FOUND_ERROR",
+        (e) => e.extensions?.code === 'STRAPI_NOT_FOUND_ERROR',
       ),
     );
 
@@ -417,17 +422,66 @@ async function main() {
       { id: firstNote.documentId },
     );
     check(
-      "Direct fetch of an active note still works",
+      'Direct fetch of an active note still works',
       !activeFetch?.errors && activeFetch?.data?.note?.documentId,
     );
   } else {
-    check("Probe note created for soft-delete test", false, "createNote returned no documentId");
+    check(
+      'Probe note created for soft-delete test',
+      false,
+      'createNote returned no documentId',
+    );
   }
+
+  // 9. Ownership: two-user isolation
+  section('Ownership: two-user isolation');
+
+  const testuserJwt = (
+    await gql(
+      `mutation { register(input: { username: "testuser-${Date.now()}", email: "a-${Date.now()}@x.com", password: "testuser" }) { jwt } }`,
+    )
+  )?.data?.register?.jwt;
+
+  const testuser2Jwt = (
+    await gql(
+      `mutation { register(input: { username: "testuser2-${Date.now()}", email: "b-${Date.now()}@x.com", password: "testuser2" }) { jwt } }`,
+    )
+  )?.data?.register?.jwt;
+
+  const testuserNote = (
+    await gql(
+      `mutation { createNote(data: { title: "testuser-only", content: "secret" }) { documentId } }`,
+      undefined,
+      { Authorization: `Bearer ${testuserJwt}` },
+    )
+  )?.data?.createNote;
+
+  const testuser2View = await gql(`{ notes { documentId } }`, undefined, {
+    Authorization: `Bearer ${testuser2Jwt}`,
+  });
+  check(
+    "testuser2 does not see testuser's notes in the list",
+    !testuser2View?.data?.notes?.some(
+      (n) => n.documentId === testuserNote.documentId,
+    ),
+  );
+
+  const testuser2Attack = await gql(
+    `mutation A($id: ID!) { togglePin(documentId: $id) { documentId } }`,
+    { id: testuserNote.documentId },
+    { Authorization: `Bearer ${testuser2Jwt}` },
+  );
+  check(
+    "testuser2 cannot toggle pin on testuser's note (Policy Failed)",
+    testuser2Attack?.errors?.some((e) =>
+      /Policy Failed|Forbidden/i.test(e.message),
+    ),
+  );
 
   // Summary
   console.log(`\n${pass} passed, ${fail} failed`);
   if (failed.length) {
-    console.log("\nFailures:");
+    console.log('\nFailures:');
     failed.forEach((f) => console.log(`  • ${f}`));
   }
   process.exit(fail === 0 ? 0 : 1);

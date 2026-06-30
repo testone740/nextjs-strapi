@@ -1,10 +1,37 @@
-"use server";
+'use server';
 
-// TODO (Part 4 Step 8.4): wire this Server Action to the LOGIN mutation.
-// Until then, every submission console.logs and returns. The login form
-// in `page.tsx` posts here.
+import { redirect } from 'next/navigation';
+import { getClient } from '@/lib/apollo-client';
+import { LOGIN } from '@/lib/graphql';
+import { setJwt } from '@/lib/auth';
+
+const asString = (v: FormDataEntryValue | null) =>
+  typeof v === 'string' ? v : '';
 
 export async function loginAction(formData: FormData) {
-  const payload = Object.fromEntries(formData);
-  console.log("[starter] loginAction:", payload);
+  const identifier = asString(formData.get('identifier')).trim();
+  const password = asString(formData.get('password'));
+
+  if (!identifier || !password) return;
+
+  let jwt: string | undefined;
+  try {
+    const { data } = await getClient().mutate<{
+      login: { jwt: string };
+    }>({
+      mutation: LOGIN,
+      variables: { input: { identifier, password } },
+    });
+    jwt = data?.login?.jwt;
+  } catch {
+    // Apollo throws CombinedGraphQLErrors when Strapi returns an error
+    // (e.g. "Invalid identifier or password"). Catch it and fall through
+    // to the !jwt redirect below; otherwise the throw bubbles to Next's
+    // runtime overlay instead of giving the user an error message.
+  }
+
+  if (!jwt) redirect('/login?error=invalid');
+
+  await setJwt(jwt);
+  redirect('/');
 }
